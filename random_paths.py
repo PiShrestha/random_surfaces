@@ -2,9 +2,10 @@ import random
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-N = 100                # grid width  (number of 'R' steps)
-M = 100                # grid height (number of 'U' steps)
-SNAPSHOT_INTERVAL = 5000  # save a frame every this many steps (for animation)
+N = 10                # grid width  (number of 'R' steps)
+M = 10                # grid height (number of 'U' steps)
+SNAPSHOT_INTERVAL = 100  # save a frame every this many steps (for animation)
+METRIC = 'area'       # 'area' = area between paths, 'hamming' = Hamming distance
 
 
 def make_top_path(n, m):
@@ -55,6 +56,36 @@ def hamming_distance(a, b):
     return sum(x != y for x, y in zip(a, b))
 
 
+def area_between(path_top, path_bot):
+    # area enclosed between two lattice paths (in unit squares).
+    # equals area_under(top) - area_under(bot), where area_under
+    # sums the current y for every R step.
+    area = 0
+    y_top, y_bot = 0, 0
+    for s_top, s_bot in zip(path_top, path_bot):
+        if s_top == 'R':
+            area += y_top
+        else:
+            y_top += 1
+        if s_bot == 'R':
+            area -= y_bot
+        else:
+            y_bot += 1
+    return area
+
+
+def compute_gap(path_top, path_bot, metric=METRIC):
+    if metric == 'area':
+        return area_between(path_top, path_bot)
+    return hamming_distance(path_top, path_bot)
+
+
+def gap_label(metric=METRIC):
+    if metric == 'area':
+        return 'Area (unit squares)', 'Area between paths'
+    return 'Hamming distance', 'Hamming distance over time'
+
+
 def run_coupling(n, m, snapshot_interval=SNAPSHOT_INTERVAL):
     # run the monotonic coupling until the two extreme chains meet.
     path_top = make_top_path(n, m)
@@ -66,7 +97,7 @@ def run_coupling(n, m, snapshot_interval=SNAPSHOT_INTERVAL):
     gap_history = []
 
     snapshots.append((0, path_to_coords(path_top), path_to_coords(path_bot)))
-    gap_history.append((0, hamming_distance(path_top, path_bot)))
+    gap_history.append((0, compute_gap(path_top, path_bot)))
 
     while path_top != path_bot:
         # draw the SAME (k, direction) for both chains 
@@ -87,7 +118,7 @@ def run_coupling(n, m, snapshot_interval=SNAPSHOT_INTERVAL):
                  path_to_coords(path_bot))
             )
             gap_history.append(
-                (mixing_time, hamming_distance(path_top, path_bot))
+                (mixing_time, compute_gap(path_top, path_bot))
             )
 
     # Always record the final (coupled) state
@@ -144,8 +175,9 @@ def animate_coupling(snapshots, n, m, mixing_time, gap_history):
     ax_gap.set_xlim(0, max(gap_steps) * 1.05 if gap_steps else 1)
     ax_gap.set_ylim(0, max(gap_vals) * 1.1 if gap_vals else 1)
     ax_gap.set_xlabel('MCMC step')
-    ax_gap.set_ylabel('Number of positions two paths differ)')
-    ax_gap.set_title('Convergence of the coupling gap')
+    ylabel, title = gap_label()
+    ax_gap.set_ylabel(ylabel)
+    ax_gap.set_title(title)
     ax_gap.grid(True, linewidth=0.3, alpha=0.5)
     gap_line, = ax_gap.plot([], [], '-', color='#2a9d8f', linewidth=1.5)
 
@@ -217,8 +249,8 @@ def plot_final_state(snapshots, n, m, mixing_time, gap_history):
         ax.set_ylim(-0.5, m + 0.5)
         ax.set_aspect('equal')
         ax.grid(True, linewidth=0.3, alpha=0.5)
-        ax.set_title(f'{label}  (step {step:,})', fontsize=11)
-        ax.legend(fontsize=8)
+        # ax.set_title(f'{label}  (step {step:,})', fontsize=11)
+        # ax.legend(fontsize=8)
 
     # Convergence curve
     ax_gap = axes[3]
@@ -226,8 +258,9 @@ def plot_final_state(snapshots, n, m, mixing_time, gap_history):
     gap_vals  = [g for _, g in gap_history]
     ax_gap.plot(gap_steps, gap_vals, '-', color='#2a9d8f', linewidth=1.5)
     ax_gap.set_xlabel('MCMC step')
-    ax_gap.set_ylabel('Hamming distance')
-    ax_gap.set_title('Coupling gap over time')
+    ylabel, title = gap_label()
+    ax_gap.set_ylabel(ylabel)
+    ax_gap.set_title(title)
     ax_gap.grid(True, linewidth=0.3, alpha=0.5)
 
     fig.suptitle(
