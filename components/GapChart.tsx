@@ -2,17 +2,21 @@
 
 import { useEffect, useRef } from "react";
 import type { GapPoint, Metric } from "@/lib/types";
+import type { Theme } from "@/hooks/useTheme";
+import { exportCanvasAsPng } from "@/lib/export";
 
 interface Props {
   data: GapPoint[];
   metric: Metric;
-  /** changes every frame – used as a re-render trigger */
   trigger: number;
+  theme: Theme;
 }
 
-export default function GapChart({ data, metric, trigger }: Props) {
+export default function GapChart({ data, metric, trigger, theme }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const isDark = () => document.documentElement.classList.contains("dark");
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -29,14 +33,23 @@ export default function GapChart({ data, metric, trigger }: Props) {
     const ctx = canvas.getContext("2d")!;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+    const dark = isDark();
+    const bg = dark ? "#111827" : "#ffffff";
+    const gridLine = dark ? "#1f2937" : "#f3f4f6";
+    const axisLine = dark ? "#374151" : "#d1d5db";
+    const textColor = dark ? "#9ca3af" : "#6b7280";
+    const textMuted = dark ? "#6b7280" : "#9ca3af";
+
     const pad = { top: 18, right: 16, bottom: 32, left: 52 };
     const plotW = W - pad.left - pad.right;
     const plotH = H - pad.top - pad.bottom;
 
-    ctx.clearRect(0, 0, W, H);
+    // clear
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
 
     if (data.length < 2) {
-      ctx.fillStyle = "#9ca3af";
+      ctx.fillStyle = textMuted;
       ctx.font = "13px system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.fillText("Gap will appear here", W / 2, H / 2);
@@ -49,8 +62,8 @@ export default function GapChart({ data, metric, trigger }: Props) {
     const toX = (s: number) => pad.left + (s / maxStep) * plotW;
     const toY = (g: number) => pad.top + plotH - (g / maxGap) * plotH;
 
-    // ── horizontal grid ─────────────────────────────────────────
-    ctx.strokeStyle = "#f3f4f6";
+    // horizontal grid
+    ctx.strokeStyle = gridLine;
     ctx.lineWidth = 1;
     for (let i = 0; i <= 4; i++) {
       const y = pad.top + (plotH / 4) * i;
@@ -60,7 +73,7 @@ export default function GapChart({ data, metric, trigger }: Props) {
       ctx.stroke();
     }
 
-    // ── data line ───────────────────────────────────────────────
+    // data line
     ctx.strokeStyle = "#10b981";
     ctx.lineWidth = 2;
     ctx.lineJoin = "round";
@@ -73,8 +86,8 @@ export default function GapChart({ data, metric, trigger }: Props) {
     }
     ctx.stroke();
 
-    // ── axes ────────────────────────────────────────────────────
-    ctx.strokeStyle = "#d1d5db";
+    // axes
+    ctx.strokeStyle = axisLine;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(pad.left, pad.top);
@@ -82,11 +95,10 @@ export default function GapChart({ data, metric, trigger }: Props) {
     ctx.lineTo(W - pad.right, H - pad.bottom);
     ctx.stroke();
 
-    // ── tick labels ─────────────────────────────────────────────
-    ctx.fillStyle = "#6b7280";
+    // tick labels
+    ctx.fillStyle = textColor;
     ctx.font = "10px system-ui, sans-serif";
 
-    // x-axis
     ctx.textAlign = "center";
     for (let i = 0; i <= 4; i++) {
       const s = Math.round((maxStep / 4) * i);
@@ -94,15 +106,14 @@ export default function GapChart({ data, metric, trigger }: Props) {
       ctx.fillText(label, toX(s), H - pad.bottom + 14);
     }
 
-    // y-axis
     ctx.textAlign = "right";
     for (let i = 0; i <= 4; i++) {
       const g = Math.round((maxGap / 4) * (4 - i));
       ctx.fillText(String(g), pad.left - 6, pad.top + (plotH / 4) * i + 4);
     }
 
-    // ── axis titles ─────────────────────────────────────────────
-    ctx.fillStyle = "#9ca3af";
+    // axis titles
+    ctx.fillStyle = textMuted;
     ctx.font = "11px system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("MCMC step", pad.left + plotW / 2, H - 4);
@@ -112,15 +123,38 @@ export default function GapChart({ data, metric, trigger }: Props) {
     ctx.rotate(-Math.PI / 2);
     ctx.fillText(metric === "area" ? "Area" : "Hamming dist.", 0, 0);
     ctx.restore();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trigger, metric]);
+  }, [trigger, metric, theme]);
+
+  const handleExport = () => {
+    if (canvasRef.current)
+      exportCanvasAsPng(canvasRef.current, "gap-chart.png");
+  };
 
   return (
-    <div ref={wrapRef} className="h-[180px] w-full">
-      <canvas
-        ref={canvasRef}
-        className="h-full w-full rounded-lg border border-gray-200 bg-white"
-      />
+    <div className="relative">
+      <div ref={wrapRef} className="h-[180px] w-full">
+        <canvas
+          ref={canvasRef}
+          className="h-full w-full rounded-xl border border-gray-200 dark:border-gray-700"
+        />
+      </div>
+      {data.length >= 2 && (
+        <button
+          onClick={handleExport}
+          title="Export as PNG"
+          className="absolute right-2 top-2 rounded-lg bg-white/80 p-1.5 text-gray-500 shadow-sm backdrop-blur transition hover:bg-white dark:bg-gray-800/80 dark:text-gray-400 dark:hover:bg-gray-800"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="h-4 w-4"
+          >
+            <path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" />
+            <path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

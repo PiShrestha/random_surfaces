@@ -48,12 +48,14 @@ export default function Controls(props: Props) {
     <div className="space-y-5">
       {/* ── Grid size ─────────────────────────────────────────── */}
       <fieldset disabled={running || paused} className="space-y-3">
-        <legend className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+        <legend className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
           Grid Size
         </legend>
 
         <label className="flex items-center justify-between gap-3">
-          <span className="text-sm text-gray-700">N (width)</span>
+          <span className="text-sm text-gray-700 dark:text-gray-300">
+            N (width)
+          </span>
           <div className="flex items-center gap-2">
             <input
               type="range"
@@ -63,14 +65,16 @@ export default function Controls(props: Props) {
               onChange={(e) => onN(+e.target.value)}
               className="h-1.5 w-28 accent-indigo-600"
             />
-            <span className="w-7 text-right text-sm font-medium tabular-nums">
+            <span className="w-7 text-right text-sm font-medium tabular-nums text-gray-900 dark:text-gray-100">
               {n}
             </span>
           </div>
         </label>
 
         <label className="flex items-center justify-between gap-3">
-          <span className="text-sm text-gray-700">M (height)</span>
+          <span className="text-sm text-gray-700 dark:text-gray-300">
+            M (height)
+          </span>
           <div className="flex items-center gap-2">
             <input
               type="range"
@@ -80,7 +84,7 @@ export default function Controls(props: Props) {
               onChange={(e) => onM(+e.target.value)}
               className="h-1.5 w-28 accent-indigo-600"
             />
-            <span className="w-7 text-right text-sm font-medium tabular-nums">
+            <span className="w-7 text-right text-sm font-medium tabular-nums text-gray-900 dark:text-gray-100">
               {m}
             </span>
           </div>
@@ -89,10 +93,10 @@ export default function Controls(props: Props) {
 
       {/* ── Metric toggle ─────────────────────────────────────── */}
       <fieldset disabled={running || paused} className="space-y-1">
-        <legend className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+        <legend className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
           Gap Metric
         </legend>
-        <div className="mt-1 flex rounded-lg border border-gray-200 text-sm">
+        <div className="mt-1 flex rounded-lg border border-gray-200 text-sm dark:border-gray-600">
           {(["area", "hamming"] as Metric[]).map((v) => (
             <button
               key={v}
@@ -100,7 +104,7 @@ export default function Controls(props: Props) {
               className={`flex-1 px-3 py-1.5 transition-colors first:rounded-l-lg last:rounded-r-lg ${
                 metric === v
                   ? "bg-indigo-600 text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-50"
+                  : "bg-white text-gray-600 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
               }`}
             >
               {v === "area" ? "Area" : "Hamming"}
@@ -111,7 +115,7 @@ export default function Controls(props: Props) {
 
       {/* ── Speed ─────────────────────────────────────────────── */}
       <label className="block space-y-1">
-        <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+        <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
           Speed&ensp;×{speed}
         </span>
         <input
@@ -151,28 +155,35 @@ export default function Controls(props: Props) {
         <button
           onClick={onReset}
           disabled={idle}
-          className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 disabled:opacity-40"
+          className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 disabled:opacity-40 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
         >
           Reset
         </button>
       </div>
 
       {/* ── Stats ─────────────────────────────────────────────── */}
-      <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
+      <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm dark:border-gray-700 dark:bg-gray-800/50">
         <div className="flex justify-between">
-          <span className="text-gray-500">Status</span>
-          <span className="font-medium capitalize">{status}</span>
+          <span className="text-gray-500 dark:text-gray-400">Status</span>
+          <span className="font-medium capitalize text-gray-900 dark:text-gray-100">
+            {status === "running" && (
+              <span className="mr-1.5 inline-block h-2 w-2 animate-pulse rounded-full bg-indigo-500" />
+            )}
+            {status}
+          </span>
         </div>
         <div className="mt-1 flex justify-between">
-          <span className="text-gray-500">MCMC Steps</span>
-          <span className="font-medium tabular-nums">
+          <span className="text-gray-500 dark:text-gray-400">MCMC Steps</span>
+          <span className="font-medium tabular-nums text-gray-900 dark:text-gray-100">
             {totalSteps.toLocaleString()}
           </span>
         </div>
         {mixingTime !== null && (
           <div className="mt-1 flex justify-between">
-            <span className="text-gray-500">Mixing Time</span>
-            <span className="font-semibold text-emerald-600 tabular-nums">
+            <span className="text-gray-500 dark:text-gray-400">
+              Mixing Time
+            </span>
+            <span className="font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
               {mixingTime.toLocaleString()}
             </span>
           </div>
