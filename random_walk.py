@@ -10,6 +10,8 @@ M = 30                 # grid height (number of 'U' steps)
 SNAPSHOT_INTERVAL = 3000  # record a frame every this many steps
 MAX_STEPS = 300_000       # stop if not coupled by this many steps
 ANIM_INTERVAL_MS = 120    # milliseconds between frames
+BLIT = False              # blitting can be fragile on some backends; False is safer
+REPEAT = False            # True to loop the animation; False to sit on the final frame
 
 
 # -----------------------------
@@ -224,7 +226,8 @@ def animate_dashboard(c_demo, u_demo, n, m):
         if idx_c < len(snaps_c) - 1:
             c_status.set_text(f"step {step_c:,}")
         else:
-            c_status.set_text(f"{'✓' if coupled_c else '⏹'} end at {t_c:,}")
+            icon = 'OK' if coupled_c else 'END'
+            c_status.set_text(f"{icon} at {t_c:,}")
 
         # --- uncoupled snapshot ---
         idx_u = min(frame_idx, len(snaps_u) - 1)
@@ -235,7 +238,8 @@ def animate_dashboard(c_demo, u_demo, n, m):
         if idx_u < len(snaps_u) - 1:
             u_status.set_text(f"step {step_u:,}")
         else:
-            u_status.set_text(f"{'✓' if coupled_u else '⏹'} end at {t_u:,}")
+            icon = 'OK' if coupled_u else 'END'
+            u_status.set_text(f"{icon} at {t_u:,}")
 
         # --- gap lines up to the same snapshot index (they align with snapshot recording) ---
         gid_c = min(idx_c, len(steps_c) - 1)
@@ -249,7 +253,7 @@ def animate_dashboard(c_demo, u_demo, n, m):
     anim = FuncAnimation(
         fig, update, frames=total_frames,
         init_func=init, interval=ANIM_INTERVAL_MS,
-        blit=True, repeat=False
+        blit=BLIT, repeat=REPEAT,
     )
     plt.tight_layout()
     plt.show()
